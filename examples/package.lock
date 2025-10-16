@@ -1,0 +1,5 @@
+prefixes:
+  as5600: ..
+packages:
+  ..:
+    path: ..
