@@ -6,7 +6,7 @@ Based on planar Hall technology, this device measures the orthogonal component
 of the flux density (Bz) from an external magnet while rejecting stray magnetic
 fields. [Datasheet](https://files.seeedstudio.com/wiki/Grove-12-bit-Magnetic-Rotary-Position-Sensor-AS5600/res/Magnetic%20Rotary%20Position%20Sensor%20AS5600%20Datasheet.pdf)
 
-![Front and back of a module with a BH1750](images/as5600.png)
+![Front and back of an as5600](images/as5600.jpg)
 
 ## Features:
 
