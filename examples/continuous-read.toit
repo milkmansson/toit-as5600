@@ -5,6 +5,7 @@
 
 import gpio
 import i2c
+import math
 import as5600 show *
 
 sda-pin-number := 19    // please set these correctly for your device
@@ -26,5 +27,5 @@ main:
   driver := As5600 device
 
   300.repeat:
-    print " - Raw Angle $it: $(%3.2f driver.read-angle --steps=360)  $(driver.read-raw-angle)"
+    print " - Raw Angle $it: $(%3.2f driver.read-angle --steps=360.0)  $(driver.read-raw-angle) $(%0.5f driver.read-angle --steps=(2 * math.PI))"
     sleep --ms=100

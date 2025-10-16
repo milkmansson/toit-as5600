@@ -34,6 +34,10 @@ class As5600:
   static CONF-HYSTERESIS-MASK_        ::= 0b00000000_00001100
   static CONF-POWER-MODE-MASK_        ::= 0b00000000_00000011
 
+  static OUTPUT-STAGE-ANALOG_  ::= 0b00 // analog (full range from 0% to 100% between GND and VDD
+  static OUTPUT-STAGE-REDUCED_ ::= 0b01 // analog (reduced range from 10% to 90% between GND and VDD
+  static OUTPUT-STAGE-DIGITAL_ ::= 0b10 // digital PWM
+
   // Fast Filter Thresholds - in LSBs
   static FAST-FILTER-TH-SLOW-ONLY ::= 0b000 // slow filter only
   static FAST-FILTER-TH-6-LSBS    ::= 0b001 // 6 LSBs
@@ -93,6 +97,25 @@ class As5600:
     logger_ = logger.with-name "as5600"
     reg_ = device.registers
 
+
+  /**
+  Sets output stage to Analog. (Full range from 0% to 100% between GND and VDD)
+  */
+  set-output-stage-analog -> none:
+    write-register_ REG-CONF-CONF_ OUTPUT-STAGE-ANALOG_ --mask=CONF-OUTPUT-STAGE-MASK_
+
+  /**
+  Sets output stage to Analog but reduced from 10% to 90% between GND & VDD.
+  */
+  set-output-stage-reduced-analog -> none:
+    write-register_ REG-CONF-CONF_ OUTPUT-STAGE-REDUCED_ --mask=CONF-OUTPUT-STAGE-MASK_
+
+  /**
+  Sets output stage to Digital PWM.
+  */
+  set-output-stage-digital -> none:
+    write-register_ REG-CONF-CONF_ OUTPUT-STAGE-DIGITAL_ --mask=CONF-OUTPUT-STAGE-MASK_
+
   /**
   Reads raw angle.
 
@@ -114,13 +137,13 @@ class As5600:
   If --steps is supplied, results in a value (0 <= x <= steps) with one full
    revolution divided up into x sectors.
   */
-  read-angle --steps/int=0 -> float:
+  read-angle --steps/float=0.0 -> float:
     assert: 0 <= steps <= 4096
     raw := read-register_ REG-ANGLE_ --mask=TWELVE-BIT-MASK_
-    if steps == 0:
+    if steps == 0.0:
       return raw.to-float
     else:
-      return (raw.to-float * steps.to-float) / 4096.0
+      return (raw.to-float * steps) / 4096.0
 
   /**
   Gets start position configuration from the IC.
@@ -132,6 +155,7 @@ class As5600:
   Sets start position configuration from the IC.
   */
   set-start-position value/int -> none:
+    assert: 0 < value <= 4095
     write-register_ REG-CONF-START-POS_ value --mask=TWELVE-BIT-MASK_
 
   /**
@@ -144,6 +168,7 @@ class As5600:
   Sets stop position configuration from the IC.
   */
   set-stop-position value/int -> none:
+    assert: 0 < value <= 4095
     write-register_ REG-CONF-STOP-POS_ value --mask=TWELVE-BIT-MASK_
 
   /**
@@ -156,6 +181,7 @@ class As5600:
   Sets Max Angle configuration from the IC.
   */
   set-max-angle-position value/int -> none:
+    assert: 0 < value <= 4095
     write-register_ REG-CONF-MAX-ANGLE_ value --mask=TWELVE-BIT-MASK_
 
   /**
@@ -304,7 +330,6 @@ class As5600:
   read-agc -> int:
     return read-register_ REG-STATUS-AGC_ --width=8
 
-
   /**
   Gets Previous Burns.
 
@@ -312,7 +337,7 @@ class As5600:
    times ZPOS and MPOS have been permanently written.
   */
   get-previous-burns -> int:
-    return read-register_ REG-CONF-ZMCO_ --mask=CONF-ZMCO-MASK_
+    return read-register_ REG-CONF-ZMCO_ --mask=CONF-ZMCO-MASK_ --width=8
 
   /**
   Burns angle configuration (ZPOS & MPOS) into non-volatile memory on the IC.
