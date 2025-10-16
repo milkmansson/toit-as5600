@@ -8,6 +8,10 @@ fields. [Datasheet](https://files.seeedstudio.com/wiki/Grove-12-bit-Magnetic-Rot
 
 ![Front and back of an as5600](images/as5600.jpg)
 
+I originally started experimenting with this device whilst trying to find a way
+to implement a knob for a project where I did not want to drill through it's
+beautiful casing.
+
 ## Features:
 
 ### I2C mode:
