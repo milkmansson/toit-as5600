@@ -138,7 +138,6 @@ class As5600:
    revolution divided up into x sectors.
   */
   read-angle --steps/float=0.0 -> float:
-    assert: 0 <= steps <= 4096
     raw := read-register_ REG-ANGLE_ --mask=TWELVE-BIT-MASK_
     if steps == 0.0:
       return raw.to-float
