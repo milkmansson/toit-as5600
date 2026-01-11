@@ -468,20 +468,41 @@ class As5600:
   /**
   Provides strings to display bitmasks nicely when testing.
   */
-  bits-16_ x/int --min-display-bits/int=0 -> string:
-    assert: (x >= 0) and (x <= 0xFFFF)
-    if (x > 255) or (min-display-bits > 8):
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 16 '0'
-      out-string = "$(out-string[0..4]).$(out-string[4..8]).$(out-string[8..12]).$(out-string[12..16])"
-      return out-string
-    else if (x > 15) or (min-display-bits > 4):
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 8 '0'
-      out-string = "$(out-string[0..4]).$(out-string[4..8])"
-      return out-string
-    else:
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 4 '0'
-      out-string = "$(out-string[0..4])"
-      return out-string
+  bits-grouped_ x/int
+      --min-display-bits/int=0
+      --group-size/int=8
+      --sep/string="."
+      -> string:
+
+    assert: x >= 0
+    assert: group-size > 0
+
+    // raw binary
+    bin := "$(%b x)"
+
+    // choose target width: at least min-display-bits, then round up to a full group
+    groups := 0
+    leftover := 0
+    width := bin.size
+    if min-display-bits > width:
+      width = min-display-bits
+    if group-size > width:
+      width = group-size
+    leftover = width % group-size
+    if leftover > 0:
+      width = width + (group-size - leftover)
+
+    // left-pad to target width
+    bin = bin.pad --left width '0'
+
+    // group left->right
+    out := ""
+    i := 0
+    while i < bin.size:
+      if i > 0: out = "$(out)$(sep)"
+      j := i + group-size
+      if j > bin.size: j = bin.size
+      out = "$(out)$(bin[i..j])"
+      i = j
+
+    return out
