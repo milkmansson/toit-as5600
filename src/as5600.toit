@@ -370,12 +370,12 @@ class As5600:
       logger_.warn "burn-settings: NOT burned. Previous burns: $get-previous-burns"
 
 
-  read-register_
+  read-register_ -> int
       register/int
       --mask/int?=null
       --offset/int?=null
       --width/int=DEFAULT-REGISTER-WIDTH_
-      --signed/bool=false -> any:
+      --signed/bool=false:
     assert: (width == 8) or (width == 16)
     if mask == null:
       mask = (width == 16) ? 0xFFFF : 0xFF
@@ -404,13 +404,13 @@ class As5600:
       masked-value := (register-value & mask) >> offset
       return masked-value
 
-  write-register_
+  write-register_ -> none
       register/int
-      value/any
+      value/int
       --mask/int?=null
       --offset/int?=null
       --width/int=DEFAULT-REGISTER-WIDTH_
-      --signed/bool=false -> none:
+      --signed/bool=false:
     assert: (width == 8) or (width == 16)
     if mask == null:
       mask = (width == 16) ? 0xFFFF : 0xFF
@@ -424,9 +424,9 @@ class As5600:
     if ((width == 8)  and (mask == 0xFF)  and (offset == 0)) or
       ((width == 16) and (mask == 0xFFFF) and (offset == 0)):
       if width == 8:
-        signed ? reg_.write-i8 register (value & 0xFF) : reg_.write-u8 register (value & 0xFF)
+        signed ? reg_.write-i8 register value : reg_.write-u8 register value
       else:
-        signed ? reg_.write-i16-be register (value & 0xFFFF) : reg_.write-u16-be register (value & 0xFFFF)
+        signed ? reg_.write-i16-be register value : reg_.write-u16-be register value
       return
 
     // Read Reg for modification
@@ -454,8 +454,6 @@ class As5600:
     else:
       signed ? reg_.write-i16-be register new-value : reg_.write-u16-be register new-value
       return
-
-    throw "write-register_: Unhandled Circumstance."
 
   /**
   Clamps the supplied value to specified limit.
