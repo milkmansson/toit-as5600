@@ -138,7 +138,6 @@ class As5600:
    revolution divided up into x sectors.
   */
   read-angle --steps/float=0.0 -> float:
-    assert: 0 <= steps <= 4096
     raw := read-register_ REG-ANGLE_ --mask=TWELVE-BIT-MASK_
     if steps == 0.0:
       return raw.to-float
@@ -371,12 +370,12 @@ class As5600:
       logger_.warn "burn-settings: NOT burned. Previous burns: $get-previous-burns"
 
 
-  read-register_
+  read-register_ -> int
       register/int
       --mask/int?=null
       --offset/int?=null
       --width/int=DEFAULT-REGISTER-WIDTH_
-      --signed/bool=false -> any:
+      --signed/bool=false:
     assert: (width == 8) or (width == 16)
     if mask == null:
       mask = (width == 16) ? 0xFFFF : 0xFF
@@ -405,13 +404,13 @@ class As5600:
       masked-value := (register-value & mask) >> offset
       return masked-value
 
-  write-register_
+  write-register_ -> none
       register/int
-      value/any
+      value/int
       --mask/int?=null
       --offset/int?=null
       --width/int=DEFAULT-REGISTER-WIDTH_
-      --signed/bool=false -> none:
+      --signed/bool=false:
     assert: (width == 8) or (width == 16)
     if mask == null:
       mask = (width == 16) ? 0xFFFF : 0xFF
@@ -425,9 +424,9 @@ class As5600:
     if ((width == 8)  and (mask == 0xFF)  and (offset == 0)) or
       ((width == 16) and (mask == 0xFFFF) and (offset == 0)):
       if width == 8:
-        signed ? reg_.write-i8 register (value & 0xFF) : reg_.write-u8 register (value & 0xFF)
+        signed ? reg_.write-i8 register value : reg_.write-u8 register value
       else:
-        signed ? reg_.write-i16-be register (value & 0xFFFF) : reg_.write-u16-be register (value & 0xFFFF)
+        signed ? reg_.write-i16-be register value : reg_.write-u16-be register value
       return
 
     // Read Reg for modification
@@ -456,8 +455,6 @@ class As5600:
       signed ? reg_.write-i16-be register new-value : reg_.write-u16-be register new-value
       return
 
-    throw "write-register_: Unhandled Circumstance."
-
   /**
   Clamps the supplied value to specified limit.
   */
@@ -469,20 +466,41 @@ class As5600:
   /**
   Provides strings to display bitmasks nicely when testing.
   */
-  bits-16_ x/int --min-display-bits/int=0 -> string:
-    assert: (x >= 0) and (x <= 0xFFFF)
-    if (x > 255) or (min-display-bits > 8):
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 16 '0'
-      out-string = "$(out-string[0..4]).$(out-string[4..8]).$(out-string[8..12]).$(out-string[12..16])"
-      return out-string
-    else if (x > 15) or (min-display-bits > 4):
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 8 '0'
-      out-string = "$(out-string[0..4]).$(out-string[4..8])"
-      return out-string
-    else:
-      out-string := "$(%b x)"
-      out-string = out-string.pad --left 4 '0'
-      out-string = "$(out-string[0..4])"
-      return out-string
+  bits-grouped_ x/int
+      --min-display-bits/int=0
+      --group-size/int=8
+      --sep/string="."
+      -> string:
+
+    assert: x >= 0
+    assert: group-size > 0
+
+    // raw binary
+    bin := "$(%b x)"
+
+    // choose target width: at least min-display-bits, then round up to a full group
+    groups := 0
+    leftover := 0
+    width := bin.size
+    if min-display-bits > width:
+      width = min-display-bits
+    if group-size > width:
+      width = group-size
+    leftover = width % group-size
+    if leftover > 0:
+      width = width + (group-size - leftover)
+
+    // left-pad to target width
+    bin = bin.pad --left width '0'
+
+    // group left->right
+    out := ""
+    i := 0
+    while i < bin.size:
+      if i > 0: out = "$(out)$(sep)"
+      j := i + group-size
+      if j > bin.size: j = bin.size
+      out = "$(out)$(bin[i..j])"
+      i = j
+
+    return out
